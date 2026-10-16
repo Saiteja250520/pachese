@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Pachese - Royal Traditional Board Game</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Header Notification Banner -->
+  <div id="toast-banner" class="toast-banner hidden"></div>
+
+  <!-- Screen 1: Lobby / Landing -->
+  <section id="lobby-screen" class="screen active">
+    <div class="lobby-card">
+      <div class="logo-box">
+        <h1 class="game-title">PACHESE</h1>
+        <p class="subtitle">The Royal 7-Cowrie Chaupar of Strategy & Rollback</p>
+      </div>
+
+      <div class="lobby-form">
+        <div class="input-group">
+          <label for="player-name">Your Name</label>
+          <input type="text" id="player-name" placeholder="Enter warrior name..." maxlength="16" value="Player 1">
+        </div>
+
+        <div class="action-columns">
+          <!-- Create Room -->
+          <div class="action-card">
+            <h3>Host New Match</h3>
+            <p>Create a private room for your online friends</p>
+            <div class="mode-select">
+              <label class="radio-chip">
+                <input type="radio" name="match-mode" value="1v1" checked>
+                <span>1 vs 1</span>
+              </label>
+              <label class="radio-chip">
+                <input type="radio" name="match-mode" value="2v2">
+                <span>2 vs 2 (Team)</span>
+              </label>
+            </div>
+            <button id="btn-create-room" class="btn btn-primary">Create Room</button>
+          </div>
+
+          <div class="divider">OR</div>
+
+          <!-- Join Room -->
+          <div class="action-card">
+            <h3>Join Existing Room</h3>
+            <p>Enter the 5-letter room code shared by your friend</p>
+            <div class="input-group">
+              <input type="text" id="join-room-code" placeholder="CODE (e.g. AB7X9)" maxlength="5" style="text-transform: uppercase;">
+            </div>
+            <button id="btn-join-room" class="btn btn-secondary">Join Game</button>
+          </div>
+        </div>
+
+        <!-- Quick Solo / Pass & Play button -->
+        <div class="solo-play-bar">
+          <button id="btn-quick-bot" class="btn btn-outline">⚔️ Play Solo vs Bots (Immediate Test)</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Screen 2: Waiting Room / Lobby -->
+  <section id="waiting-screen" class="screen hidden">
+    <div class="lobby-card">
+      <div class="room-code-badge">
+        <span>ROOM CODE:</span>
+        <strong id="display-room-code">-----</strong>
+        <button id="btn-copy-code" class="btn-icon" title="Copy code">📋</button>
+      </div>
+      <p class="room-tip">Share this code with your friends so they can join!</p>
+
+      <div class="slots-container">
+        <h3>Team 1 (Crimson Royals)</h3>
+        <div class="slot-list" id="t1-slots"></div>
+
+        <h3>Team 2 (Sapphire Dynasts)</h3>
+        <div class="slot-list" id="t2-slots"></div>
+      </div>
+
+      <div class="waiting-actions">
+        <button id="btn-start-game" class="btn btn-primary btn-large">⚔️ Start Match</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Screen 3: Live In-Game Play -->
+  <section id="game-screen" class="screen hidden">
+    <!-- Top HUD Bar -->
+    <header class="game-hud">
+      <div class="hud-left">
+        <span class="room-pill">ROOM: <strong id="hud-room-code">---</strong></span>
+        <span id="home-lock-t1" class="lock-pill locked">T1: 🔒 No Capture</span>
+        <span id="home-lock-t2" class="lock-pill locked">T2: 🔒 No Capture</span>
+      </div>
+
+      <div class="hud-center">
+        <div id="turn-banner" class="turn-banner">
+          <span id="active-player-name">Team 1</span>'s Turn
+        </div>
+      </div>
+
+      <div class="hud-right">
+        <div class="team-score-pill t1-pill">
+          T1 Home: <strong id="t1-home-count">0</strong>/8
+        </div>
+        <div class="team-score-pill t2-pill">
+          T2 Home: <strong id="t2-home-count">0</strong>/8
+        </div>
+        <button id="btn-sound-toggle" class="btn-icon" title="Toggle Sound">🔊</button>
+      </div>
+    </header>
+
+    <!-- Main Game Layout -->
+    <main class="game-layout">
+      <!-- Left Sidebar: Reserve Coins & T1 Base -->
+      <aside class="side-panel left-panel">
+        <div class="team-base-card t1-card">
+          <div class="base-header">
+            <h4>🔴 Team 1 (Right Arm)</h4>
+            <span class="base-badge">Leader: <span id="t1-leader-name">--</span></span>
+          </div>
+          <div class="reserve-container">
+            <span class="reserve-title">Off-Board Reserve</span>
+            <div id="t1-reserve" class="reserve-coins"></div>
+          </div>
+        </div>
+
+        <!-- Live Action Ticker Log -->
+        <div class="log-card">
+          <div class="card-header">
+            <h4>📜 Live Chronicle</h4>
+          </div>
+          <div id="game-log" class="log-messages"></div>
+        </div>
+      </aside>
+
+      <!-- Center: Canvas Pachese Board -->
+      <div class="board-container">
+        <canvas id="pachese-board"></canvas>
+      </div>
+
+      <!-- Right Sidebar: Controls & T2 Base -->
+      <aside class="side-panel right-panel">
+        <div class="team-base-card t2-card">
+          <div class="base-header">
+            <h4>🔵 Team 2 (Left Arm)</h4>
+            <span class="base-badge">Leader: <span id="t2-leader-name">--</span></span>
+          </div>
+          <div class="reserve-container">
+            <span class="reserve-title">Off-Board Reserve</span>
+            <div id="t2-reserve" class="reserve-coins"></div>
+          </div>
+        </div>
+
+        <!-- Shell Arena & Move Tray -->
+        <div class="action-tray-card">
+          <div class="cowrie-arena">
+            <div class="cowrie-header">
+              <h4>🐚 7 Cowrie Shells</h4>
+              <span id="shell-status" class="shell-status-pill">Ready</span>
+            </div>
+
+            <!-- 7 Animated Cowries -->
+            <div id="cowrie-shells-row" class="cowrie-row">
+              <div class="cowrie-shell"></div>
+              <div class="cowrie-shell"></div>
+              <div class="cowrie-shell"></div>
+              <div class="cowrie-shell"></div>
+              <div class="cowrie-shell"></div>
+              <div class="cowrie-shell"></div>
+              <div class="cowrie-shell"></div>
+            </div>
+
+            <div id="roll-result-text" class="roll-result-text">Toss the cowries to begin!</div>
+
+            <button id="btn-throw-cowries" class="btn btn-primary btn-throw">
+              🎲 Throw Cowrie Shells
+            </button>
+          </div>
+
+          <!-- Move Scores Tray -->
+          <div class="scores-tray">
+            <div class="tray-title">
+              <span>Collected Scores:</span>
+              <small>(Click score, then select coin)</small>
+            </div>
+            <div id="scores-pool" class="scores-chips-row">
+              <span class="empty-tray-text">No throws yet</span>
+            </div>
+          </div>
+
+          <!-- Quick Reaction Wheel -->
+          <div class="reaction-bar">
+            <button class="reaction-btn" data-emoji="👏">👏</button>
+            <button class="reaction-btn" data-emoji="🔥">🔥</button>
+            <button class="reaction-btn" data-emoji="😱">😱</button>
+            <button class="reaction-btn" data-emoji="💀">💀</button>
+            <button class="reaction-btn" data-emoji="🔄">🔄</button>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </section>
+
+  <!-- Victory Modal -->
+  <div id="victory-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <h2 id="victory-title">VICTORY!</h2>
+      <p id="victory-desc">Team has crowned all 8 coins in the Charkoni!</p>
+      <button id="btn-play-again" class="btn btn-primary">Play Again</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="audio.js"></script>
+  <script src="tracks.js"></script>
+  <script src="board.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
